@@ -1,4 +1,4 @@
-<h1 align="center"><img src="https://raw.githubusercontent.com/leviome/DearGaussianGUI/assets/DearGaussianLogo.png" alt="DearGaussian logo"></h1>
+<h1 align="center"><img src="https://github.com/leviome/DearGaussianGUI/blob/main/assets/DearGaussianLogo.png" alt="DearGaussian logo"></h1>
 <h4 align="center">A minimal GUI for 3DGS using DearPyGUI framework.</h4>
 
 ---
