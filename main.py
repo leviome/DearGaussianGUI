@@ -171,15 +171,11 @@ class GUI:
                 dpg.add_text("Infer time: ")
                 dpg.add_text("no data", tag="_log_infer_time")
 
-            def callback_setattr(sender, app_data, user_data):
-                setattr(self, user_data, app_data)
-
             # init stuff
             with dpg.collapsing_header(label="Initialize", default_open=True):
                 # seed stuff
                 def callback_set_seed(sender, app_data):
                     self.seed = app_data
-                    self.seed_everything()
 
                 dpg.add_input_text(
                     label="seed",
@@ -289,35 +285,6 @@ class GUI:
                 return
             self.mouse_loc = np.array(app_data)
 
-        def callback_keypoint_drag(sender, app_data):
-            if not self.is_animation:
-                print("Please switch to animation mode!")
-                return
-            if not dpg.is_item_focused("_primary_window"):
-                return
-            if len(self.deform_keypoints.get_kpt()) == 0:
-                return
-            if self.animate_tool is None:
-                self.animation_initialize()
-            # 2D to 3D delta
-            dx = app_data[1]
-            dy = app_data[2]
-            if dpg.is_key_down(dpg.mvKey_R):
-                side = self.cam.rot.as_matrix()[:3, 0]
-                up = self.cam.rot.as_matrix()[:3, 1]
-                forward = self.cam.rot.as_matrix()[:3, 2]
-                rotvec_z = forward * np.radians(-0.05 * dx)
-                rot_mat = (R.from_rotvec(rotvec_z)).as_matrix()
-                self.deform_keypoints.set_rotation_delta(rot_mat)
-            else:
-                delta = 0.00010 * self.cam.rot.as_matrix()[:3, :3] @ np.array([dx, -dy, 0])
-                self.deform_keypoints.update_delta(delta)
-                self.need_update_overlay = True
-
-        self.callback_keypoint_drag = callback_keypoint_drag
-
-        ### register camera handler
-
         def callback_camera_drag_rotate_or_draw_mask(sender, app_data):
             if not dpg.is_item_focused("_primary_window"):
                 return
@@ -359,8 +326,6 @@ class GUI:
             )
 
             dpg.add_mouse_move_handler(callback=callback_set_mouse_loc)
-            dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Right, callback=callback_keypoint_drag)
-            # dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Left, callback=callback_keypoint_add)
 
         dpg.create_viewport(
             title="DearGaussian",
