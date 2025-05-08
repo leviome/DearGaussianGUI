@@ -4,8 +4,6 @@
 </h1>
 <h4 align="center">A minimal GUI for 3DGS using DearPyGUI framework.</h4>
 
----
-
 ```
 git clone https://github.com/leviome/DearGaussianGUI --recursive
 cd DearGaussianGUI
