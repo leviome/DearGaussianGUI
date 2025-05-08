@@ -106,10 +106,6 @@ class GUI:
         self.last_traj_overlay_type = None
         self.view_animation = True
         self.n_rings_N = 2
-        # Use ARAP or Generative Model to Deform
-        self.deform_mode = "arap_iterative"
-        self.should_render_customized_trajectory = False
-        self.should_render_customized_trajectory_spiral = False
 
         if self.gui:
             dpg.create_context()
@@ -144,8 +140,6 @@ class GUI:
         ):
             # add the texture
             dpg.add_image("_texture")
-
-        # dpg.set_primary_window("_primary_window", True)
 
         # control window
         with dpg.window(
@@ -332,6 +326,7 @@ class GUI:
             width=self.W + 600,
             height=self.H + (45 if os.name == "nt" else 0),
             resizable=False,
+            small_icon="assets/pink_icon.png"
         )
 
         ### global theme
