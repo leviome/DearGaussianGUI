@@ -26,7 +26,6 @@ import numpy as np
 import dearpygui.dearpygui as dpg
 import datetime
 from PIL import Image
-from scipy.spatial.transform import Rotation as R
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -371,9 +370,6 @@ class GUI:
         if not hasattr(self, 't0'):
             self.t0 = time.time()
             self.fps_of_fid = 10
-
-        # fid = torch.remainder(torch.tensor((time.time() - self.t0) * self.fps_of_fid).float().cuda() / len(
-        #     self.scene.getTrainCameras()) * self.video_speed, 1.)
 
         if self.should_save_screenshot and os.path.exists(
                 os.path.join(self.args.model_path, 'screenshot_camera.pickle')):

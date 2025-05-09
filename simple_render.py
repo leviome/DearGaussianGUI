@@ -91,7 +91,7 @@ def render_simple(viewpoint_camera, pc,
     # Rasterize visible Gaussians to image, obtain their radii (on screen).
 
     # rendered_image, radii
-    rendered_image, rendered_depth, rendered_alpha, radii = rasterizer(
+    rendered_image, radii, depth, alpha = rasterizer(
         means3D=means3D,
         means2D=means2D,
         shs=shs,
@@ -108,6 +108,6 @@ def render_simple(viewpoint_camera, pc,
         "viewspace_points": screenspace_points,
         "visibility_filter": radii > 0,
         "radii": radii,
-        "alpha": rendered_alpha,
-        "depth": rendered_depth
+        "alpha": alpha,
+        "depth": depth
     }
