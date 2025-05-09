@@ -6,8 +6,6 @@
 import os
 import sys
 
-from numpy.core.defchararray import endswith
-
 sys.path.append("./gs/")
 import time
 import torch
@@ -37,16 +35,13 @@ class GUI:
         self.args = args
         self.opt = opt
         self.pipe = pipe
-
         self.tb_writer = prepare_output_and_logger(dataset)
 
         self.gaussians = GaussianModel(3)
-
         if not self.args.model_path.endswith(".ply"):
             self.ply_path = f"{self.args.model_path}/point_cloud/iteration_30000/point_cloud.ply"
         else:
             self.ply_path = self.args.model_path
-
         self.gaussians.load_ply(self.ply_path)
 
         # self.scene = Scene(dataset, self.gaussians, load_iteration=-1)
@@ -54,14 +49,8 @@ class GUI:
         bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
         self.background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-        self.iter_start = torch.cuda.Event(enable_timing=True)
-        self.iter_end = torch.cuda.Event(enable_timing=True)
-
-        self.viewpoint_stack = None
-
         # For UI
         self.visualization_mode = 'RGB'
-
         self.W = args.W
         self.H = args.H
         self.cam = OrbitCamera(args.W, args.H, r=args.radius, fovy=args.fovy)
@@ -70,20 +59,10 @@ class GUI:
         self.buffer_image = np.ones((self.W, self.H, 3), dtype=np.float32)
         self.video_speed = 1.
 
-        # For Animation
-        self.is_animation = False
-        self.need_update_overlay = False
-        self.buffer_overlay = None
-        self.showing_overlay = True
+        # For Screenshot
         self.should_save_screenshot = False
-        self.should_vis_trajectory = False
         self.screenshot_id = 0
         self.screenshot_sv_path = f'./screenshot/' + datetime.datetime.now().strftime('%Y-%m-%d')
-        self.traj_overlay = None
-        self.vis_traj_realtime = False
-        self.last_traj_overlay_type = None
-        self.view_animation = True
-        self.n_rings_N = 2
 
         dpg.create_context()
         self.register_dpg()
@@ -96,36 +75,25 @@ class GUI:
         ### register texture
         with dpg.texture_registry(show=False):
             dpg.add_raw_texture(
-                self.W,
-                self.H,
+                self.W, self.H,
                 self.buffer_image,
                 format=dpg.mvFormat_Float_rgb,
                 tag="_texture",
             )
 
         ### register window
-        # the rendered image, as the primary window
         with dpg.window(
-                tag="_primary_window",
-                width=self.W,
-                height=self.H,
-                pos=[0, 0],
-                no_move=True,
-                no_title_bar=True,
+                tag="_primary_window", width=self.W, height=self.H,
+                pos=[0, 0], no_move=True, no_title_bar=True,
                 no_scrollbar=True,
         ):
-            # add the texture
             dpg.add_image("_texture")
 
         # control window
         with dpg.window(
-                label="Control",
-                tag="_control_window",
-                width=600,
-                height=self.H,
-                pos=[self.W, 0],
-                no_move=True,
-                no_title_bar=True,
+                label="Control", tag="_control_window",
+                width=600, height=self.H, pos=[self.W, 0],
+                no_move=True, no_title_bar=True,
         ):
             # button theme
             with dpg.theme() as theme_button:
@@ -137,8 +105,7 @@ class GUI:
                     dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
 
             # timer stuff
-            with dpg.group(horizontal=True):
-                dpg.add_text("Infer time: ")
+            with dpg.group(horizontal=False):
                 dpg.add_text("no data", tag="_log_infer_time")
 
                 # input stuff
@@ -159,20 +126,10 @@ class GUI:
 
                 with dpg.group(horizontal=True):
                     dpg.add_button(
-                        label="Model Path",
+                        label="Change Path",
                         callback=lambda: dpg.show_item("file_dialog_tag"),
                     )
-                    dpg.add_text("", tag="_log_input")
-
-                # save current model
-                with dpg.group(horizontal=True):
-                    def callback_screenshot(sender, app_data):
-                        self.should_save_screenshot = True
-
-                    dpg.add_button(
-                        label="screenshot", tag="_button_screenshot", callback=callback_screenshot
-                    )
-                    dpg.bind_item_theme("_button_screenshot", theme_button)
+                    dpg.add_text(self.ply_path, tag="Model_Path")
 
             # rendering options
             with dpg.collapsing_header(label="Rendering", default_open=True):
@@ -201,6 +158,16 @@ class GUI:
                     default_value=np.rad2deg(self.cam.fovy),
                     callback=callback_set_fovy,
                 )
+
+                # save screenshot
+                with dpg.group(horizontal=True):
+                    def callback_screenshot(sender, app_data):
+                        self.should_save_screenshot = True
+
+                    dpg.add_button(
+                        label="screenshot", tag="_button_screenshot", callback=callback_screenshot
+                    )
+                    dpg.bind_item_theme("_button_screenshot", theme_button)
 
         def callback_set_mouse_loc(sender, app_data):
             if not dpg.is_item_focused("_primary_window"):
@@ -368,7 +335,7 @@ class GUI:
         torch.cuda.synchronize()
         t = starter.elapsed_time(ender)
 
-        dpg.set_value("_log_infer_time", f"{t:.4f}ms (FPS: {int(1000 / t)})")
+        dpg.set_value("_log_infer_time", f"FPS: {int(1000 / t)} (Infer time: {t:.2f}ms) ")
         dpg.set_value("_texture", self.buffer_image)
 
         return self.buffer_image
