@@ -293,6 +293,9 @@ class GUI:
 
     @torch.no_grad()
     def test_step(self, specified_cam=None):
+        if dpg.is_key_down(dpg.mvKey_Escape):
+            print("Exit GUI!")
+            dpg.stop_dearpygui()
 
         starter = torch.cuda.Event(enable_timing=True)
         ender = torch.cuda.Event(enable_timing=True)
@@ -363,8 +366,6 @@ class GUI:
             .cpu()
             .numpy()
         )
-
-        self.need_update = True
 
         ender.record()
         torch.cuda.synchronize()
