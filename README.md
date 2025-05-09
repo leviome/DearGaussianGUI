@@ -5,7 +5,7 @@
 <h4 align="center">A minimal GUI for 3DGS using DearPyGUI framework.</h4>
 
 ```
-# download original 3DGS repo
+# download original 3DGS repo, which can be skipped if you have it already.
 git clone https://github.com/graphdeco-inria/gaussian-splatting --recursive
 
 git clone https://github.com/leviome/DearGaussianGUI --recursive
@@ -48,5 +48,13 @@ CUDA_VISBILE_DEVICES=0 python main.py --model_path /path/to/scene/
       month        = {July},
       year         = {2023},
       url          = {https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/}
+}
+```
+```
+@article{huang2023sc,
+  title={SC-GS: Sparse-Controlled Gaussian Splatting for Editable Dynamic Scenes},
+  author={Huang, Yi-Hua and Sun, Yang-Tian and Yang, Ziyi and Lyu, Xiaoyang and Cao, Yan-Pei and Qi, Xiaojuan},
+  journal={arXiv preprint arXiv:2312.14937},
+  year={2023}
 }
 ```
