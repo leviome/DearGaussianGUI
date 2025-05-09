@@ -5,9 +5,23 @@
 <h4 align="center">A minimal GUI for 3DGS using DearPyGUI framework.</h4>
 
 ```
+# download original 3DGS repo
+git clone https://github.com/graphdeco-inria/gaussian-splatting --recursive
+
 git clone https://github.com/leviome/DearGaussianGUI --recursive
 cd DearGaussianGUI
-ln -s gaussian-splatting gs
+
+# softlink
+ln -s /path/to/gaussian-splatting gs
+
+# set enviroment
+conda create -n DearGUI python=3.10
+conda activate DearGUI
+pip install -r requirements.txt
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+# install depth rasterization and original simple-knn
+pip install ./submodules/diff-gaussian-rasterization
+pip install ./gs/submodules/simple-knn
 
 # run GUI
 CUDA_VISBILE_DEVICES=0 python main.py --model_path /path/to/scene/
