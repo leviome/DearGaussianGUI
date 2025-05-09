@@ -1,12 +1,6 @@
 #
-# Copyright (C) 2023, Inria
-# GRAPHDECO research group, https://team.inria.fr/graphdeco
-# All rights reserved.
-#
-# This software is free for non-commercial, research and evaluation use
-# under the terms of the LICENSE.md file.
-#
-# For inquiries contact  george.drettakis@inria.fr
+# Author: Liwei Liao
+# Contact: levio.pku@gmail.com
 #
 
 import os
@@ -51,7 +45,6 @@ class GUI:
 
         self.gaussians = GaussianModel(3)
 
-        # self.model_path = "/data/levi/gaussian-splatting/output/for_seg1/"
         self.gaussians.load_ply(
             f"{self.args.model_path}/point_cloud/iteration_30000/point_cloud.ply")
 
@@ -89,12 +82,6 @@ class GUI:
         self.is_animation = False
         self.need_update_overlay = False
         self.buffer_overlay = None
-        self.animation_trans_bias = None
-        self.animation_rot_bias = None
-        self.animation_scaling_bias = None
-        self.animate_tool = None
-        self.motion_genmodel = None
-        self.motion_animation_d_values = None
         self.showing_overlay = True
         self.should_save_screenshot = False
         self.should_vis_trajectory = False
@@ -164,19 +151,6 @@ class GUI:
                 dpg.add_text("Infer time: ")
                 dpg.add_text("no data", tag="_log_infer_time")
 
-            # init stuff
-            with dpg.collapsing_header(label="Initialize", default_open=True):
-                # seed stuff
-                def callback_set_seed(sender, app_data):
-                    self.seed = app_data
-
-                dpg.add_input_text(
-                    label="seed",
-                    default_value=self.seed,
-                    on_enter=True,
-                    callback=callback_set_seed,
-                )
-
                 # input stuff
                 def callback_select_input(sender, app_data):
                     # only one item
@@ -199,41 +173,10 @@ class GUI:
 
                 with dpg.group(horizontal=True):
                     dpg.add_button(
-                        label="input",
+                        label="Model Path",
                         callback=lambda: dpg.show_item("file_dialog_tag"),
                     )
                     dpg.add_text("", tag="_log_input")
-
-                with dpg.group(horizontal=True):
-                    dpg.add_text("Scale Const: ")
-
-                    def callback_vis_scale_const(sender):
-                        self.vis_scale_const = 10 ** dpg.get_value(sender)
-                        self.need_update = True
-
-                    dpg.add_slider_float(
-                        label="Log vis_scale_const (For debugging)",
-                        default_value=-3,
-                        max_value=-.5,
-                        min_value=-5,
-                        callback=callback_vis_scale_const,
-                    )
-
-                with dpg.group(horizontal=True):
-                    dpg.add_text("Temporal Speed: ")
-                    self.video_speed = 1.
-
-                    def callback_speed_control(sender):
-                        self.video_speed = 10 ** dpg.get_value(sender)
-                        self.need_update = True
-
-                    dpg.add_slider_float(
-                        label="Play speed",
-                        default_value=0.,
-                        max_value=3.,
-                        min_value=-3.,
-                        callback=callback_speed_control,
-                    )
 
                 # save current model
                 with dpg.group(horizontal=True):
