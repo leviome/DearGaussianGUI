@@ -29,6 +29,10 @@ except ImportError:
     TENSORBOARD_FOUND = False
 
 
+def complete_ply_path(path):
+    return path if path.endswith(".ply") else f"{path}/point_cloud/iteration_30000/point_cloud.ply"
+
+
 class GUI:
     def __init__(self, args, dataset, opt, pipe) -> None:
         self.dataset = dataset
@@ -37,11 +41,11 @@ class GUI:
         self.pipe = pipe
         self.tb_writer = prepare_output_and_logger(dataset)
 
+        self.need_update = False
+
+        self.is_change_gau = False
         self.gaussians = GaussianModel(3)
-        if not self.args.model_path.endswith(".ply"):
-            self.ply_path = f"{self.args.model_path}/point_cloud/iteration_30000/point_cloud.ply"
-        else:
-            self.ply_path = self.args.model_path
+        self.ply_path = complete_ply_path(self.args.model_path)
         self.gaussians.load_ply(self.ply_path)
 
         # self.scene = Scene(dataset, self.gaussians, load_iteration=-1)
@@ -57,7 +61,6 @@ class GUI:
         self.vis_scale_const = None
         self.mode = "render"
         self.buffer_image = np.ones((self.W, self.H, 3), dtype=np.float32)
-        self.video_speed = 1.
 
         # For Screenshot
         self.should_save_screenshot = False
@@ -110,26 +113,33 @@ class GUI:
 
                 # input stuff
                 def callback_select_input(sender, app_data):
-                    print(app_data)
                     self.need_update = True
+                    ply_path = complete_ply_path(app_data['file_path_name'])
+                    assert os.path.exists(ply_path)
+                    self.ply_path = ply_path
+                    print(f"New ply: {self.ply_path}")
+                    self.is_change_gau = True
 
                 with dpg.file_dialog(
                         directory_selector=False,
                         show=False,
                         callback=callback_select_input,
                         file_count=1,
-                        tag="file_dialog_tag",
+                        tag="change_path",
                         width=700,
                         height=400,
                 ):
-                    dpg.add_file_extension("Images{.jpg,.jpeg,.png}")
+                    dpg.add_file_extension("Ply{.ply}")
 
                 with dpg.group(horizontal=True):
                     dpg.add_button(
                         label="Change Path",
-                        callback=lambda: dpg.show_item("file_dialog_tag"),
+                        callback=lambda: dpg.show_item("change_path"),
                     )
                     dpg.add_text(self.ply_path, tag="Model_Path")
+
+            with dpg.collapsing_header(label="User Guide", default_open=False):
+                dpg.add_text("Press [Esc] to exit.", tag="Guide")
 
             # rendering options
             with dpg.collapsing_header(label="Rendering", default_open=True):
@@ -337,6 +347,12 @@ class GUI:
 
         dpg.set_value("_log_infer_time", f"FPS: {int(1000 / t)} (Infer time: {t:.2f}ms) ")
         dpg.set_value("_texture", self.buffer_image)
+        dpg.set_value("Model_Path", self.ply_path)
+
+        if self.is_change_gau:
+            self.gaussians = GaussianModel(3)
+            self.gaussians.load_ply(self.ply_path)
+            self.is_change_gau = False
 
         return self.buffer_image
 
@@ -349,8 +365,7 @@ def prepare_output_and_logger(args):
             unique_str = str(uuid.uuid4())
         args.model_path = os.path.join("./output/", unique_str[0:10])
 
-    # Set up output folder
-    print("Output folder: {}".format(args.model_path))
+    print("Scene Folder: {}".format(args.model_path))
     os.makedirs(args.model_path, exist_ok=True)
     with open(os.path.join(args.model_path, "cfg_args"), 'w') as cfg_log_f:
         cfg_log_f.write(str(Namespace(**vars(args))))
