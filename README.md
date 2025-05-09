@@ -2,16 +2,18 @@
 <br>
 <a href="https://github.com/leviome/DearGaussianGUI"><img src="https://github.com/leviome/DearGaussianGUI/blob/main/assets/DearGaussianLogo.png" alt="DearGaussian logo">
 </h1>
-<h4 align="center">A minimal GUI for 3DGS using DearPyGUI framework.</h4>
+<h4 align="center">A base GUI for 3DGS using DearPyGUI framework.</h4>
 
+---
+## Fast Run
 ```
-# download original 3DGS repo, which can be skipped if you have it already.
+# Download original 3DGS repo, which can be skipped if you have it already.
 git clone https://github.com/graphdeco-inria/gaussian-splatting --recursive
 
 git clone https://github.com/leviome/DearGaussianGUI --recursive
 cd DearGaussianGUI
 
-# softlink
+# Important: make softlink from the original 3DGS repo
 ln -s /path/to/gaussian-splatting gs
 
 # set enviroment
@@ -24,8 +26,9 @@ pip install ./submodules/diff-gaussian-rasterization
 pip install ./gs/submodules/simple-knn
 
 # run GUI
-CUDA_VISBILE_DEVICES=0 python main.py --model_path /path/to/scene/
+CUDA_VISBILE_DEVICES=0 python main.py --model_path ./assets/yellow_dog.ply
 ```
+
 ![GUI](assets/screenshot.png)
 
 ## Acknowledgement
