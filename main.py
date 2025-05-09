@@ -30,16 +30,11 @@ except ImportError:
 
 
 class GUI:
-    def __init__(self, args, dataset, opt, pipe, testing_iterations, saving_iterations) -> None:
-
-        self.gui = True  # enable gui
-
+    def __init__(self, args, dataset, opt, pipe) -> None:
         self.dataset = dataset
         self.args = args
         self.opt = opt
         self.pipe = pipe
-        self.testing_iterations = testing_iterations
-        self.saving_iterations = saving_iterations
 
         self.tb_writer = prepare_output_and_logger(dataset)
 
@@ -93,14 +88,12 @@ class GUI:
         self.view_animation = True
         self.n_rings_N = 2
 
-        if self.gui:
-            dpg.create_context()
-            self.register_dpg()
-            self.test_step()
+        dpg.create_context()
+        self.register_dpg()
+        self.test_step()
 
     def __del__(self):
-        if self.gui:
-            dpg.destroy_context()
+        dpg.destroy_context()
 
     def register_dpg(self):
         ### register texture
@@ -153,11 +146,7 @@ class GUI:
 
                 # input stuff
                 def callback_select_input(sender, app_data):
-                    # only one item
-                    for k, v in app_data["selections"].items():
-                        dpg.set_value("_log_input", k)
-                        self.load_input(v)
-
+                    print(app_data)
                     self.need_update = True
 
                 with dpg.file_dialog(
@@ -298,7 +287,6 @@ class GUI:
 
     # gui mode
     def render(self):
-        assert self.gui
         while dpg.is_dearpygui_running():
             self.test_step()
             dpg.render_dearpygui_frame()
@@ -309,10 +297,6 @@ class GUI:
         starter = torch.cuda.Event(enable_timing=True)
         ender = torch.cuda.Event(enable_timing=True)
         starter.record()
-
-        if not hasattr(self, 't0'):
-            self.t0 = time.time()
-            self.fps_of_fid = 10
 
         if self.should_save_screenshot and os.path.exists(
                 os.path.join(self.args.model_path, 'screenshot_camera.pickle')):
@@ -332,7 +316,10 @@ class GUI:
                 fid=0
             )
         fid = cur_cam.fid
+
+        # rendering step
         out = render_simple(cur_cam, self.gaussians)
+
         if self.mode == "normal_dep":
             from cam_utils import depth2normal
             normal = depth2normal(out["depth"])
@@ -392,15 +379,12 @@ class GUI:
         else:
             buffer_image = self.buffer_image
 
-        if self.gui:
-            dpg.set_value("_log_infer_time", f"{t:.4f}ms ({int(1000 / t)} FPS FID: {fid})")
-            dpg.set_value(
-                "_texture", buffer_image
-            )  # buffer must be contiguous, else seg fault!
+        dpg.set_value("_log_infer_time", f"{t:.4f}ms ({int(1000 / t)} FPS FID: {fid})")
+        dpg.set_value("_texture", buffer_image)
+
         return buffer_image
 
     def test_speed(self, round=500):
-        self.deform.deform.cached_nn_weight = True
         self.test_step()
         t0 = time.time()
         for i in range(round):
@@ -436,32 +420,15 @@ def prepare_output_and_logger(args):
 
 if __name__ == "__main__":
     # Set up command line argument parser
-    parser = ArgumentParser(description="Training script parameters")
+    parser = ArgumentParser(description="GUI Parameters")
     lp = ModelParams(parser)
     op = OptimizationParams(parser)
     pp = PipelineParams(parser)
-
-    parser.add_argument('--gui', action='store_true', help="start a GUI")
     parser.add_argument('--W', type=int, default=800, help="GUI width")
     parser.add_argument('--H', type=int, default=800, help="GUI height")
-    parser.add_argument('--elevation', type=float, default=0, help="default GUI camera elevation")
     parser.add_argument('--radius', type=float, default=5, help="default GUI camera radius from center")
     parser.add_argument('--fovy', type=float, default=50, help="default GUI camera fovy")
-
-    parser.add_argument('--ip', type=str, default="127.0.0.1")
-    parser.add_argument('--port', type=int, default=6009)
-    parser.add_argument('--detect_anomaly', action='store_true', default=False)
-    parser.add_argument("--test_iterations", nargs="+", type=int,
-                        default=[5000, 6000, 7_000] + list(range(8000, 100_0001, 1000)))
-    parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 10_000, 20_000, 30_000, 40000])
-    parser.add_argument("--quiet", action="store_true")
-    parser.add_argument("--deform-type", type=str, default='mlp')
-
     args = parser.parse_args(sys.argv[1:])
-    args.save_iterations.append(args.iterations)
 
-    torch.autograd.set_detect_anomaly(args.detect_anomaly)
-    gui = GUI(args=args, dataset=lp.extract(args), opt=op.extract(args), pipe=pp.extract(args),
-              testing_iterations=args.test_iterations, saving_iterations=args.save_iterations)
-
+    gui = GUI(args=args, dataset=lp.extract(args), opt=op.extract(args), pipe=pp.extract(args))
     gui.render()
