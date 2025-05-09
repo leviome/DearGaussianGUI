@@ -50,16 +50,15 @@ class GUI:
 
         # self.scene = Scene(dataset, self.gaussians, load_iteration=-1)
 
-        bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
-        self.background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
+        self.bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
+        self.background = torch.tensor(self.bg_color, dtype=torch.float32, device="cuda")
 
         # For UI
         self.visualization_mode = 'RGB'
         self.W = args.W
         self.H = args.H
         self.cam = OrbitCamera(args.W, args.H, r=args.radius, fovy=args.fovy)
-        self.vis_scale_const = None
-        self.mode = "render"
+        self.mode = "RGB"
         self.buffer_image = np.ones((self.W, self.H, 3), dtype=np.float32)
 
         # For Screenshot
@@ -149,7 +148,7 @@ class GUI:
                     self.need_update = True
 
                 dpg.add_combo(
-                    ("render", "depth", "alpha", "normal_dep"),
+                    ("RGB", "depth", "alpha", "normal_dep"),
                     label="mode",
                     default_value=self.mode,
                     callback=callback_change_mode,
@@ -168,6 +167,59 @@ class GUI:
                     default_value=np.rad2deg(self.cam.fovy),
                     callback=callback_set_fovy,
                 )
+
+                with dpg.group(horizontal=True):
+                    dpg.add_text("Background:")
+
+                    def callback_set_bg_red(sender, app_data):
+                        # Clamp value between 0 and 1
+                        self.bg_color[0] = max(0.0, min(1.0, app_data))
+                        self.need_update = True
+                        # Update the input field to show clamped value
+                        dpg.set_value("_input_bg_red", self.bg_color[0])
+
+                    def callback_set_bg_green(sender, app_data):
+                        self.bg_color[1] = max(0.0, min(1.0, app_data))
+                        self.need_update = True
+                        dpg.set_value("_input_bg_green", self.bg_color[1])
+
+                    def callback_set_bg_blue(sender, app_data):
+                        self.bg_color[2] = max(0.0, min(1.0, app_data))
+                        self.need_update = True
+                        dpg.set_value("_input_bg_blue", self.bg_color[2])
+
+                    # Red channel
+                    dpg.add_input_float(
+                        label="R", min_value=0.0, max_value=1.0,
+                        default_value=self.bg_color[0],
+                        callback=callback_set_bg_red,
+                        width=80,
+                        tag="_input_bg_red",
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                    # Green channel
+                    dpg.add_input_float(
+                        label="G", min_value=0.0, max_value=1.0,
+                        default_value=self.bg_color[1],
+                        callback=callback_set_bg_green,
+                        width=80,
+                        tag="_input_bg_green",
+                        step=0.01,
+                        format="%.2f"
+                    )
+
+                    # Blue channel
+                    dpg.add_input_float(
+                        label="B", min_value=0.0, max_value=1.0,
+                        default_value=self.bg_color[2],
+                        callback=callback_set_bg_blue,
+                        width=80,
+                        tag="_input_bg_blue",
+                        step=0.01,
+                        format="%.2f"
+                    )
 
                 # save screenshot
                 with dpg.group(horizontal=True):
@@ -292,17 +344,17 @@ class GUI:
                 self.cam.far,
                 fid=0
             )
-        fid = cur_cam.fid
 
         # rendering step
-        out = render_simple(cur_cam, self.gaussians)
+        out = render_simple(cur_cam, self.gaussians, bg_color=self.background)
 
         if self.mode == "normal_dep":
             from cam_utils import depth2normal
             normal = depth2normal(out["depth"])
             out["normal_dep"] = (normal + 1) / 2
 
-        buffer_image = out[self.mode]  # [3, H, W]
+        buffer_image = out["render"
+        if self.mode == "RGB" else self.mode]  # [3, H, W]
 
         if self.should_save_screenshot:
             alpha = out['alpha']
@@ -348,6 +400,7 @@ class GUI:
         dpg.set_value("_log_infer_time", f"FPS: {int(1000 / t)} (Infer time: {t:.2f}ms) ")
         dpg.set_value("_texture", self.buffer_image)
         dpg.set_value("Model_Path", self.ply_path)
+        self.background = torch.tensor(self.bg_color, dtype=torch.float32, device="cuda")
 
         if self.is_change_gau:
             self.gaussians = GaussianModel(3)
