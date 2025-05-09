@@ -6,6 +6,8 @@
 import os
 import sys
 
+from numpy.core.defchararray import endswith
+
 sys.path.append("./gs/")
 import time
 import torch
@@ -40,8 +42,12 @@ class GUI:
 
         self.gaussians = GaussianModel(3)
 
-        self.gaussians.load_ply(
-            f"{self.args.model_path}/point_cloud/iteration_30000/point_cloud.ply")
+        if not self.args.model_path.endswith(".ply"):
+            self.ply_path = f"{self.args.model_path}/point_cloud/iteration_30000/point_cloud.ply"
+        else:
+            self.ply_path = self.args.model_path
+
+        self.gaussians.load_ply(self.ply_path)
 
         # self.scene = Scene(dataset, self.gaussians, load_iteration=-1)
 
@@ -52,13 +58,6 @@ class GUI:
         self.iter_end = torch.cuda.Event(enable_timing=True)
 
         self.viewpoint_stack = None
-        self.ema_loss_for_log = 0.0
-        self.best_psnr = 0.0
-        self.best_ssim = 0.0
-        self.best_ms_ssim = 0.0
-        self.best_lpips = np.inf
-        self.best_alex_lpips = np.inf
-        self.best_iteration = 0
 
         # For UI
         self.visualization_mode = 'RGB'
@@ -68,12 +67,10 @@ class GUI:
         self.cam = OrbitCamera(args.W, args.H, r=args.radius, fovy=args.fovy)
         self.vis_scale_const = None
         self.mode = "render"
-        self.seed = "random"
         self.buffer_image = np.ones((self.W, self.H, 3), dtype=np.float32)
         self.video_speed = 1.
 
         # For Animation
-        self.animation_time = 0.
         self.is_animation = False
         self.need_update_overlay = False
         self.buffer_overlay = None
@@ -371,29 +368,10 @@ class GUI:
         torch.cuda.synchronize()
         t = starter.elapsed_time(ender)
 
-        if self.is_animation and self.buffer_overlay is not None:
-            overlay_mask = self.buffer_overlay.sum(axis=-1, keepdims=True) == 0
-            try:
-                buffer_image = self.buffer_image * overlay_mask + self.buffer_overlay
-            except:
-                buffer_image = self.buffer_image
-        else:
-            buffer_image = self.buffer_image
+        dpg.set_value("_log_infer_time", f"{t:.4f}ms (FPS: {int(1000 / t)})")
+        dpg.set_value("_texture", self.buffer_image)
 
-        dpg.set_value("_log_infer_time", f"{t:.4f}ms ({int(1000 / t)} FPS FID: {fid})")
-        dpg.set_value("_texture", buffer_image)
-
-        return buffer_image
-
-    def test_speed(self, round=500):
-        self.test_step()
-        t0 = time.time()
-        for i in range(round):
-            self.test_step()
-        t1 = time.time()
-        fps = round / (t1 - t0)
-        print(f'FPS: {fps}')
-        return fps
+        return self.buffer_image
 
 
 def prepare_output_and_logger(args):
