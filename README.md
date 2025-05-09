@@ -18,7 +18,7 @@ ln -s /path/to/gaussian-splatting gs
 conda create -n DearGUI python=3.10
 conda activate DearGUI
 pip install -r requirements.txt
-pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
 # install depth rasterization and original simple-knn
 pip install ./submodules/diff-gaussian-rasterization
 pip install ./gs/submodules/simple-knn
