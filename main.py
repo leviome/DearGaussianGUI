@@ -9,6 +9,7 @@ import sys
 sys.path.append("./gs/")
 import time
 import torch
+from GPUtil import getGPUs
 from simple_render import render_simple
 from gs.scene.gaussian_model import GaussianModel
 # from gs.scene import Scene
@@ -106,36 +107,37 @@ class GUI:
                     dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5)
                     dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
 
-            # timer stuff
-            with dpg.group(horizontal=False):
+            # performance stuff
+            with dpg.group(horizontal=True):
                 dpg.add_text("no data", tag="_log_infer_time")
+                dpg.add_text("no data", tag="_log_GPU_memory")
 
-                # input stuff
-                def callback_select_input(sender, app_data):
-                    self.need_update = True
-                    ply_path = complete_ply_path(app_data['file_path_name'])
-                    assert os.path.exists(ply_path)
-                    self.ply_path = ply_path
-                    print(f"New ply: {self.ply_path}")
-                    self.is_change_gau = True
+            # input stuff
+            def callback_select_input(sender, app_data):
+                self.need_update = True
+                ply_path = complete_ply_path(app_data['file_path_name'])
+                assert os.path.exists(ply_path)
+                self.ply_path = ply_path
+                print(f"New ply: {self.ply_path}")
+                self.is_change_gau = True
 
-                with dpg.file_dialog(
-                        directory_selector=False,
-                        show=False,
-                        callback=callback_select_input,
-                        file_count=1,
-                        tag="change_path",
-                        width=700,
-                        height=400,
-                ):
-                    dpg.add_file_extension("Ply{.ply}")
+            with dpg.file_dialog(
+                    directory_selector=False,
+                    show=False,
+                    callback=callback_select_input,
+                    file_count=1,
+                    tag="change_path",
+                    width=700,
+                    height=400,
+            ):
+                dpg.add_file_extension("Ply{.ply}")
 
-                with dpg.group(horizontal=True):
-                    dpg.add_button(
-                        label="Change Path",
-                        callback=lambda: dpg.show_item("change_path"),
-                    )
-                    dpg.add_text(self.ply_path, tag="Model_Path")
+            with dpg.group(horizontal=True):
+                dpg.add_button(
+                    label="Change Path",
+                    callback=lambda: dpg.show_item("change_path"),
+                )
+                dpg.add_text(self.ply_path, tag="Model_Path")
 
             with dpg.collapsing_header(label="User Guide", default_open=False):
                 dpg.add_text("Press [Esc] to exit.", tag="Guide")
@@ -398,6 +400,8 @@ class GUI:
         t = starter.elapsed_time(ender)
 
         dpg.set_value("_log_infer_time", f"FPS: {int(1000 / t)} (Infer time: {t:.2f}ms) ")
+        mem_value = getGPUs()[0].memoryUsed
+        dpg.set_value("_log_GPU_memory", f"GPU Memory: {mem_value} MB")
         dpg.set_value("_texture", self.buffer_image)
         dpg.set_value("Model_Path", self.ply_path)
         self.background = torch.tensor(self.bg_color, dtype=torch.float32, device="cuda")
