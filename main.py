@@ -390,6 +390,10 @@ class GUI:
             )
         fid = cur_cam.fid
         out = render_simple(cur_cam, self.gaussians)
+        if self.mode == "normal_dep":
+            from cam_utils import depth2normal
+            normal = depth2normal(out["depth"])
+            out["normal_dep"] = (normal + 1) / 2
 
         buffer_image = out[self.mode]  # [3, H, W]
 
