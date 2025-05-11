@@ -51,7 +51,7 @@ class GUI:
 
         # self.scene = Scene(dataset, self.gaussians, load_iteration=-1)
 
-        self.bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
+        self.bg_color = [1., 1., 1.] if dataset.white_background else [0., 0., 0.]
         self.background = torch.tensor(self.bg_color, dtype=torch.float32, device="cuda")
 
         # For UI
@@ -173,20 +173,29 @@ class GUI:
                 with dpg.group(horizontal=True):
                     dpg.add_text("Background:")
 
+                    def callback_white_bg(sender, app_data):
+                        self.bg_color = [1., 1., 1.] if app_data else [0., 0., 0.]
+
+                    dpg.add_checkbox(
+                        label="White",
+                        tag="white_bg",
+                        callback=callback_white_bg
+                    )
+
+                    dpg.add_text("\tSet value:")
+
                     def callback_set_bg_red(sender, app_data):
-                        # Clamp value between 0 and 1
-                        self.bg_color[0] = max(0.0, min(1.0, app_data))
+                        self.bg_color[0] = max(self.bg_color[0], min(1.0, app_data))
                         self.need_update = True
-                        # Update the input field to show clamped value
                         dpg.set_value("_input_bg_red", self.bg_color[0])
 
                     def callback_set_bg_green(sender, app_data):
-                        self.bg_color[1] = max(0.0, min(1.0, app_data))
+                        self.bg_color[1] = max(self.bg_color[1], min(1.0, app_data))
                         self.need_update = True
                         dpg.set_value("_input_bg_green", self.bg_color[1])
 
                     def callback_set_bg_blue(sender, app_data):
-                        self.bg_color[2] = max(0.0, min(1.0, app_data))
+                        self.bg_color[2] = max(self.bg_color[2], min(1.0, app_data))
                         self.need_update = True
                         dpg.set_value("_input_bg_blue", self.bg_color[2])
 
