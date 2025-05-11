@@ -1,7 +1,10 @@
 class DynamicScene:
-    def __init__(self):
+    def __init__(self, root):
+        self.root = root
+
+    def spatial_temporal_render(self, cam_params, fid=0):
         pass
 
-    def spatial_temporal_render(self, cam_params, time_stamp=0):
+    def __len__(self):
         pass
 
