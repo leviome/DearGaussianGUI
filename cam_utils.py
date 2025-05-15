@@ -92,8 +92,9 @@ class OrbitCamera:
         self.fovy = np.deg2rad(fovy)  # deg 2 rad
         self.near = near
         self.far = far
-        self.center = np.array([0, 0, 0], dtype=np.float32)  # look at this point
-        # self.rot = R.from_matrix(np.eye(3))
+
+        # look at this point
+        self.center = np.array([0, 0, 0], dtype=np.float32)
         self.rot = R.from_matrix(np.array([[1., 0., 0., ],
                                            [0., 0., -1.],
                                            [0., 1., 0.]]))

@@ -104,6 +104,7 @@ class GUI:
                     dpg.add_theme_color(dpg.mvThemeCol_Button, (23, 3, 18))
                     dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (51, 3, 47))
                     dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (83, 18, 83))
+                    dpg.add_theme_color(dpg.mvThemeCol_Text, (255, 165, 0))
                     dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5)
                     dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
 
@@ -135,9 +136,11 @@ class GUI:
             with dpg.group(horizontal=True):
                 dpg.add_button(
                     label="Change Path",
+                    tag="_change_path",
                     callback=lambda: dpg.show_item("change_path"),
                 )
-                dpg.add_text(self.ply_path, tag="Model_Path")
+                dpg.bind_item_theme("_change_path", theme_button)
+                dpg.add_text(self.ply_path, tag="_model_path")
 
             with dpg.collapsing_header(label="User Guide", default_open=False):
                 dpg.add_text("Press [Esc] to exit.", tag="Guide")
@@ -412,7 +415,7 @@ class GUI:
         mem_value = getGPUs()[0].memoryUsed
         dpg.set_value("_log_GPU_memory", f"GPU Memory: {mem_value} MB")
         dpg.set_value("_texture", self.buffer_image)
-        dpg.set_value("Model_Path", self.ply_path)
+        dpg.set_value("_model_path", self.ply_path)
         self.background = torch.tensor(self.bg_color, dtype=torch.float32, device="cuda")
 
         if self.is_change_gau:
